@@ -14,6 +14,7 @@ xmlToProp(FileName) ->
 	io:format("~p~n", [lists:reverse(findXml(Rez, []))]),
 	%%%%%%%%%%%%%% REZULTAT %%%%%%%%%%%%%%%%%%%
 	lists:reverse(findXml(Rez, [])),
+	%%%%%%%%%%%%%% REZULTAT %%%%%%%%%%%%%%%%%%%
 	file:close(S).
 
 	% motorcycles.xml
@@ -72,19 +73,15 @@ xmlToProp(FileName) ->
 							RezKey =  binary:bin_to_list(In, {Start + 1,End - Start - 1}),
 							if BuffPoint > 0 ->
 								RezInf =  binary:bin_to_list(In, {BuffPoint, Start - BuffPoint  }),
-								checkName(Tail1, Tail2, End+1, In, [lists:append(RezInf,RezKey) | Acc]);
-								%io:format("~p~n", [RezInf]);
+								%io:format("~p~n", [RezInf]),
+								checkName(Tail1, Tail2, End+1, In, [RezInf++RezKey | Acc]);
+								
 								BuffPoint == 0 ->
 								checkName(Tail1, Tail2, End+1, In, [RezKey| Acc]);
 								true -> false
 							end
-
-
-
-
-
-
 					end
 		end.
 
-		
+
+
