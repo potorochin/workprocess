@@ -11,7 +11,7 @@ xmlToProp(FileName) ->
 	%io:format("~p~n", [Rez]),
 
 
-	io:format("~p~n", [lists:reverse(findXml(Rez, []))]),
+	%io:format("~p~n", [lists:reverse(findXml(Rez, []))]),
 
 	io:format("~p~n", [convertXml(lists:reverse(findXml(Rez, [])) , [], [])   ]),
 	%%%%%%%%%%%%%% REZULTAT %%%%%%%%%%%%%%%%%%%
@@ -94,16 +94,22 @@ xmlToProp(FileName) ->
 				[Tag] = Head,
 				case countList(string:split(Tag, "/", all) , 0) of
 					1 -> 
-						convertXml(Tail, [Head | Buff], Acc);
+						convertXml(Tail, [erlang:list_to_atom(Tag) | Buff], Acc);
 						% add tag
 					2 -> 
-						convertXml(Tail, proplists:delete(Tag, Buff), Acc)
+						[_, Tagers] = string:split(Tag, "/", all),
+						convertXml(Tail, 
+							proplists:delete( %delete old tag
+							erlang:list_to_atom(Tagers), Buff), 
+						[{erlang:list_to_atom(Tagers)} | Acc]) %add tag, confirm Acc
 						%delete tag/value
 				end;
 
 			2 ->
 				[Tag, Value] = Head, 
-				convertXml(Tail, Buff, [{erlang:list_to_atom(Tag), Value} | Acc]);
+				ValueTag = string:split(Value, "/", all),
+				[NeedValue, _] = ValueTag,
+				convertXml(Tail, Buff, [{erlang:list_to_atom(Tag), NeedValue} | Acc]);
 			0 -> convertXml(Tail, Buff, Acc)
 		end.
 
