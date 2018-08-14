@@ -1,5 +1,5 @@
 -module (test).
--export ([xmlToProp/1, findXml/2, checkName/5, countList/2]).
+-export ([xmlToProp/1, findXml/2, checkName/5, countList/2, convertXml/3]).
 
 
 xmlToProp(FileName) -> 
@@ -12,6 +12,8 @@ xmlToProp(FileName) ->
 
 
 	io:format("~p~n", [lists:reverse(findXml(Rez, []))]),
+
+	io:format("~p~n", [convertXml(lists:reverse(findXml(Rez, [])) , [], [])   ]),
 	%%%%%%%%%%%%%% REZULTAT %%%%%%%%%%%%%%%%%%%
 	lists:reverse(findXml(Rez, [])),
 	%%%%%%%%%%%%%% REZULTAT %%%%%%%%%%%%%%%%%%%
@@ -83,5 +85,29 @@ xmlToProp(FileName) ->
 					end
 		end.
 
+	convertXml([], Buff, Acc) -> Acc;
+
+	convertXml([Head | Tail], Buff, Acc) -> 
+
+		case countList(Head, 0) of	
+			1 -> 
+				[Tag] = Head,
+				case countList(string:split(Tag, "/", all) , 0) of
+					1 -> 
+						convertXml(Tail, [Head | Buff], Acc);
+						% add tag
+					2 -> 
+						convertXml(Tail, proplists:delete(Tag, Buff), Acc)
+						%delete tag/value
+				end;
+
+			2 ->
+				[Tag, Value] = Head, 
+				convertXml(Tail, Buff, [{erlang:list_to_atom(Tag), Value} | Acc]);
+			0 -> convertXml(Tail, Buff, Acc)
+		end.
+
+%%%%     convertXml + Acc          %%%
+%%%%     convert to buff           %%%
 
 
