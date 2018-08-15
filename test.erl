@@ -19,9 +19,9 @@ xmlToProp(FileName) ->
 		%io:format("~p~n", [Head]),
 		StartPoint = binary:matches(Head, <<"<">>),
 		EndPoint = binary:matches(Head, <<">">>),
-
+ 
 		ListCheck = lists:reverse(checkName(StartPoint, EndPoint, 0, Head, [])),
-
+		
 		findXml(Tail, [ListCheck | Acc]).
 %%%%%%%%%
 %
@@ -46,11 +46,17 @@ xmlToProp(FileName) ->
 							{Start, _ } = Head1,
 							{End, _ } = Head2,
 
+							case lists:nthtail(1, string:split(In, "/", all)) of
+								[<<">">>] -> %%%%% THIS THING
+			findHardTag(string:split(In, " ", all),0,[],[]);
+								_ -> false
+							end,
+
 							
 							RezKey =  binary:bin_to_list(In, {Start + 1,End - Start - 1}),
 							if BuffPoint > 0 ->
 								RezInf =  binary:bin_to_list(In, {BuffPoint, Start - BuffPoint  }),
-								%io:format("~p~n", [RezInf]),
+								
 								checkName(Tail1, Tail2, End+1, In, [RezInf++RezKey | Acc]);
 								
 								BuffPoint == 0 ->
@@ -69,15 +75,9 @@ xmlToProp(FileName) ->
 				[Tag] = Head,
 				case countList(string:split(Tag, "/", all) , 0) of
 					1 -> 
-
-								%%%%%%%%%%%%%%%%%%%%%%
-								% add check atribute
-								%%%%%%%%%%%%%%%%%%%%%%
-
-						%countList(string:split(Tag, " ", all)
 						CheckTag = erlang:length(string:split(Tag, " ", all)),
 						case CheckTag > 1 of
-							%% {"year=\"2000\"","color=\"black\""} %%%
+
 							true -> [ DeleteTag | NeedText] = string:split(Tag, " ", all),
 							convertXml(Tail, Buff, [ {erlang:list_to_atom(DeleteTag) , findValue(NeedText, [])} | BuffValue], Acc);
 							false -> convertXml(Tail, Buff, BuffValue, Acc)
@@ -101,7 +101,7 @@ xmlToProp(FileName) ->
 								[{erlang:list_to_atom(Tagers),lists:reverse(Buff)} | Acc]) %add tag, confirm Acc
 
 						%delete tag/value
-					end
+								end
 						end
 						
 				end;
@@ -123,6 +123,34 @@ xmlToProp(FileName) ->
 			findValue(Tail, [
 				{erlang:list_to_atom(lists:reverse(lists:nthtail(1, lists:reverse(Tag)))), 
 				erlang:list_to_atom(lists:reverse(lists:nthtail(1, lists:reverse(Value))))} | Acc]).
+
+
+		findHardTag([], _, _, Acc) -> 
+		io:format("~p~n", [lists:reverse(Acc)]), lists:reverse(Acc);	
+
+		findHardTag([Head | Tail], Counter, Buff, Acc) ->
+			case Counter of
+				0 -> 
+				case Head == <<>> of
+					true -> findHardTag(Tail, 0, Buff, Acc);
+					false ->  Tag = Head,
+					findHardTag(Tail, 1, Buff, [ erlang:list_to_atom(lists:nthtail(1, binary_to_list(Tag)))| Acc])
+				end;
+
+				_ -> 
+					case Counter rem 2 of
+						1 -> findHardTag(Tail, Counter+1, Head, Acc);
+						0 -> 
+						binary_to_list(Head),
+						findHardTag(Tail, Counter+1, [], 
+							[binary_to_list(Head), %%%% Added pars head
+							% [brandName,value,<<"\"Suzukies\"/>">>]
+							% [additionalName,value,<<"\"Intruder\"/>">>]
+
+							erlang:list_to_atom(lists:reverse(lists:nthtail(1, lists:reverse(binary_to_list(Buff)))))| Acc])
+					end
+
+			end.
 
 %%%%%%%%%
 % COUNTLIST
