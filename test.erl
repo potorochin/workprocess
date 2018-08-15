@@ -21,7 +21,11 @@ xmlToProp(FileName) ->
 		EndPoint = binary:matches(Head, <<">">>),
  
 		ListCheck = lists:reverse(checkName(StartPoint, EndPoint, 0, Head, [])),
+<<<<<<< HEAD
 		
+=======
+
+>>>>>>> ec30cc16fb7d395872aea4f7800003063c3c5b76
 		findXml(Tail, [ListCheck | Acc]).
 %%%%%%%%%
 %
@@ -75,9 +79,21 @@ xmlToProp(FileName) ->
 				[Tag] = Head,
 				case countList(string:split(Tag, "/", all) , 0) of
 					1 -> 
+<<<<<<< HEAD
 						CheckTag = erlang:length(string:split(Tag, " ", all)),
 						case CheckTag > 1 of
 
+=======
+
+								%%%%%%%%%%%%%%%%%%%%%%
+								% add check atribute
+								%%%%%%%%%%%%%%%%%%%%%%
+
+						%countList(string:split(Tag, " ", all)
+						CheckTag = erlang:length(string:split(Tag, " ", all)),
+						case CheckTag > 1 of
+							%% {"year=\"2000\"","color=\"black\""} %%%
+>>>>>>> ec30cc16fb7d395872aea4f7800003063c3c5b76
 							true -> [ DeleteTag | NeedText] = string:split(Tag, " ", all),
 							convertXml(Tail, Buff, [ {erlang:list_to_atom(DeleteTag) , findValue(NeedText, [])} | BuffValue], Acc);
 							false -> convertXml(Tail, Buff, BuffValue, Acc)
@@ -101,7 +117,11 @@ xmlToProp(FileName) ->
 								[{erlang:list_to_atom(Tagers),lists:reverse(Buff)} | Acc]) %add tag, confirm Acc
 
 						%delete tag/value
+<<<<<<< HEAD
 								end
+=======
+					end
+>>>>>>> ec30cc16fb7d395872aea4f7800003063c3c5b76
 						end
 						
 				end;
@@ -124,6 +144,7 @@ xmlToProp(FileName) ->
 				{erlang:list_to_atom(lists:reverse(lists:nthtail(1, lists:reverse(Tag)))), 
 				erlang:list_to_atom(lists:reverse(lists:nthtail(1, lists:reverse(Value))))} | Acc]).
 
+<<<<<<< HEAD
 
 		findHardTag([], _, _, Acc) -> 
 		io:format("~p~n", [lists:reverse(Acc)]), lists:reverse(Acc);	
@@ -152,6 +173,8 @@ xmlToProp(FileName) ->
 
 			end.
 
+=======
+>>>>>>> ec30cc16fb7d395872aea4f7800003063c3c5b76
 %%%%%%%%%
 % COUNTLIST
 %%%%%%%%%		
