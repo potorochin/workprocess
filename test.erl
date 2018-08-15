@@ -11,13 +11,10 @@ xmlToProp(FileName) ->
 	%io:format("~p~n", [Rez]),
 
 
-	%io:format("~p~n", [lists:reverse(findXml(Rez, []))]),
-
-	io:format("~p~n", [convertXml(lists:reverse(findXml(Rez, [])) , [], [])   ]),
 	%%%%%%%%%%%%%% REZULTAT %%%%%%%%%%%%%%%%%%%
-	lists:reverse(findXml(Rez, [])),
+	convertXml(lists:reverse(findXml(Rez, [])),[],[]).
 	%%%%%%%%%%%%%% REZULTAT %%%%%%%%%%%%%%%%%%%
-	file:close(S).
+	
 
 	% motorcycles.xml
 
@@ -85,7 +82,7 @@ xmlToProp(FileName) ->
 					end
 		end.
 
-	convertXml([], Buff, Acc) -> Acc;
+	convertXml([], _, Acc) -> Acc;
 
 	convertXml([Head | Tail], Buff, Acc) -> 
 
@@ -94,26 +91,30 @@ xmlToProp(FileName) ->
 				[Tag] = Head,
 				case countList(string:split(Tag, "/", all) , 0) of
 					1 -> 
-						convertXml(Tail, [erlang:list_to_atom(Tag) | Buff], Acc);
+						convertXml(Tail, Buff, Acc);
 						% add tag
 					2 -> 
 						[_, Tagers] = string:split(Tag, "/", all),
-						convertXml(Tail, 
-							proplists:delete( %delete old tag
-							erlang:list_to_atom(Tagers), Buff), 
-						[{erlang:list_to_atom(Tagers)} | Acc]) %add tag, confirm Acc
+
+						case is_empty_list(Buff) of
+							false -> convertXml(Tail, Buff, {Tagers, Acc});
+							true -> convertXml(Tail, [],							 
+								[{erlang:list_to_atom(Tagers),Buff}, Acc]) %add tag, confirm Acc
 						%delete tag/value
+						end
+						
 				end;
 
 			2 ->
 				[Tag, Value] = Head, 
 				ValueTag = string:split(Value, "/", all),
 				[NeedValue, _] = ValueTag,
-				convertXml(Tail, Buff, [{erlang:list_to_atom(Tag), NeedValue} | Acc]);
+				convertXml(Tail, [{erlang:list_to_atom(Tag), NeedValue} | Buff], Acc);
 			0 -> convertXml(Tail, Buff, Acc)
 		end.
 
 %%%%     convertXml + Acc          %%%
 %%%%     convert to buff           %%%
 
-
+	is_empty_list([]) -> false;
+	is_empty_list(_) -> true.
