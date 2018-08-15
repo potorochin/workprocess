@@ -1,22 +1,17 @@
 -module (test).
--export ([xmlToProp/1, findXml/2, checkName/5, countList/2, convertXml/3]).
+-export ([xmlToProp/1, findXml/2, checkName/5, convertXml/4, propToXml/2]).
 
 
 xmlToProp(FileName) -> 
-	io:format("~p~n", [FileName]),
 	{ok, S} = 	file:read_file(FileName),
-
-	%Rez = string:split(S, " ", all),
 	Rez = string:split(S, "\n", all),
-	%io:format("~p~n", [Rez]),
 
 
 	%%%%%%%%%%%%%% REZULTAT %%%%%%%%%%%%%%%%%%%
-	convertXml(lists:reverse(findXml(Rez, [])),[],[]).
+	convertXml(lists:reverse(findXml(Rez, [])), [], [], []).
+
 	%%%%%%%%%%%%%% REZULTAT %%%%%%%%%%%%%%%%%%%
 	
-
-	% motorcycles.xml
 
 	findXml([], Acc) -> Acc;
 
@@ -27,24 +22,7 @@ xmlToProp(FileName) ->
 
 		ListCheck = lists:reverse(checkName(StartPoint, EndPoint, 0, Head, [])),
 
-
-		%io:format("~p~n", [ListCheck]),
-		%if Rez3 > 0 -> 			io:format("YES");
-		%true -> false		end,
-
-
 		findXml(Tail, [ListCheck | Acc]).
-
-%%%%%%%%%
-% COUNTLIST
-%%%%%%%%%		
-
-	countList([], Acc) -> Acc;
-
-	countList([_ | Tail], Acc) ->
-		countList(Tail, Acc + 1).
-
-
 %%%%%%%%%
 %
 %%%%%%%%%
@@ -58,12 +36,12 @@ xmlToProp(FileName) ->
 		FinderXml = countList(XmlFind, 0),
 		FinderDoc = countList(DoctypeFind, 0),
 
-		case FinderXml of
-			1 -> checkName(Tail1, Tail2, 0, In, [binary:bin_to_list(In) | Acc]);
+		case FinderXml of %CHECKER OFF
+			1 -> checkName(Tail1, Tail2, 0, In, Acc);
 				0 ->
 
 				case FinderDoc of
-					1 -> checkName(Tail1, Tail2, 0, In, [binary:bin_to_list(In) | Acc]);
+					1 -> checkName(Tail1, Tail2, 0, In, Acc);
 						0 -> 
 							{Start, _ } = Head1,
 							{End, _ } = Head2,
@@ -82,25 +60,48 @@ xmlToProp(FileName) ->
 					end
 		end.
 
-	convertXml([], _, Acc) -> Acc;
+	convertXml([], _, _, Acc) -> Acc;
 
-	convertXml([Head | Tail], Buff, Acc) -> 
+	convertXml([Head | Tail], Buff, BuffValue, Acc) -> 
 
 		case countList(Head, 0) of	
 			1 -> 
 				[Tag] = Head,
 				case countList(string:split(Tag, "/", all) , 0) of
 					1 -> 
-						convertXml(Tail, Buff, Acc);
+
+								%%%%%%%%%%%%%%%%%%%%%%
+								% add check atribute
+								%%%%%%%%%%%%%%%%%%%%%%
+
+						%countList(string:split(Tag, " ", all)
+						CheckTag = erlang:length(string:split(Tag, " ", all)),
+						case CheckTag > 1 of
+							%% {"year=\"2000\"","color=\"black\""} %%%
+							true -> [ DeleteTag | NeedText] = string:split(Tag, " ", all),
+							convertXml(Tail, Buff, [ {erlang:list_to_atom(DeleteTag) , findValue(NeedText, [])} | BuffValue], Acc);
+							false -> convertXml(Tail, Buff, BuffValue, Acc)
+						end;
 						% add tag
 					2 -> 
 						[_, Tagers] = string:split(Tag, "/", all),
 
 						case is_empty_list(Buff) of
-							false -> convertXml(Tail, Buff, {Tagers, Acc});
-							true -> convertXml(Tail, [],							 
-								[{erlang:list_to_atom(Tagers),Buff}, Acc]) %add tag, confirm Acc
+							false -> convertXml(Tail, Buff, BuffValue, {Tagers, Acc});
+							true -> 
+								case proplists:delete(erlang:list_to_atom(Tagers), BuffValue) == BuffValue of
+									false -> 
+								convertXml(Tail, 
+									[], 
+									proplists:delete(erlang:list_to_atom(Tagers), BuffValue),
+									[ {erlang:list_to_atom(Tagers), proplists:get_value(erlang:list_to_atom(Tagers), BuffValue),lists:reverse(Buff)} | Acc] );
+
+									true ->
+								convertXml(Tail, [],	BuffValue,						 
+								[{erlang:list_to_atom(Tagers),lists:reverse(Buff)} | Acc]) %add tag, confirm Acc
+
 						%delete tag/value
+					end
 						end
 						
 				end;
@@ -109,12 +110,52 @@ xmlToProp(FileName) ->
 				[Tag, Value] = Head, 
 				ValueTag = string:split(Value, "/", all),
 				[NeedValue, _] = ValueTag,
-				convertXml(Tail, [{erlang:list_to_atom(Tag), NeedValue} | Buff], Acc);
-			0 -> convertXml(Tail, Buff, Acc)
+				convertXml(Tail, [{erlang:list_to_atom(Tag), NeedValue} | Buff], BuffValue, Acc);
+			0 -> convertXml(Tail, Buff, BuffValue, Acc)
 		end.
 
-%%%%     convertXml + Acc          %%%
-%%%%     convert to buff           %%%
+		findValue([], Acc) -> Acc;
+
+		findValue([Head | Tail],  Acc) ->
+			
+			InputList = (string:split(Head, "\"")),
+			[Tag, Value] = InputList,
+			findValue(Tail, [
+				{erlang:list_to_atom(lists:reverse(lists:nthtail(1, lists:reverse(Tag)))), 
+				erlang:list_to_atom(lists:reverse(lists:nthtail(1, lists:reverse(Value))))} | Acc]).
+
+%%%%%%%%%
+% COUNTLIST
+%%%%%%%%%		
+
+	countList([], Acc) -> Acc;
+
+	countList([_ | Tail], Acc) ->
+		countList(Tail, Acc + 1).
+
+%%%%%%%%%
+%	EMPTY_LIST
+%%%%%%%%%
 
 	is_empty_list([]) -> false;
 	is_empty_list(_) -> true.
+
+%%%%%%%%%%
+%
+%%%%%%%%%%
+
+
+
+
+	propToXml(List, FileName) ->
+
+		{ok, S} = file:open(FileName, write),
+	%%lists:foreach(fun(X) -> io:format(S, "~p~n" ,[X]) end, [hello]),
+	file:close(S).
+
+
+	goFromText([], _, Acc)-> Acc;
+
+	goFromText([Head, Tail], S, Acc) ->
+		[{Tag, Value}] = Head.
+
