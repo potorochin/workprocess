@@ -2,14 +2,16 @@
 -export ([xmlToProp/1, findXml/2, checkName/5, convertXml/4, propToXml/2]).
 
 
-xmlToProp(FileName) -> 
-	{ok, S} = 	file:read_file(FileName),
-	Rez = string:split(S, "\n", all),
+	xmlToProp(FileName) -> 
+		{ok, S} = 	file:read_file(FileName),
+		Rez = string:split(S, "\n", all),
 
-	%%%%%%%%%%%%%% REZULTAT %%%%%%%%%%%%%%%%%%%
-	convertXml(lists:reverse(findXml(Rez, [])), [], [], []).
+		PreRez = lists:reverse(findXml(Rez, [])),
 
-	%%%%%%%%%%%%%% REZULTAT %%%%%%%%%%%%%%%%%%%
+		%%%%%%%%%%%%%% REZULTAT %%%%%%%%%%%%%%%%%%%
+		[convertXml((PreRez), [], [], []) , PreRez].
+
+		%%%%%%%%%%%%%% REZULTAT %%%%%%%%%%%%%%%%%%%
 	
 
 	findXml([], Acc) -> Acc;
@@ -25,7 +27,7 @@ xmlToProp(FileName) ->
 %%%%%%%%%
 %
 %%%%%%%%%
-	checkName([],[], _, In, Acc) -> 
+	checkName([],[], _, _, Acc) -> 
 	Acc;
 
 	checkName([Head1 | Tail1], [ Head2 | Tail2], BuffPoint, In, Acc) ->
@@ -185,21 +187,66 @@ xmlToProp(FileName) ->
 	is_empty_list(_) -> true.
 
 %%%%%%%%%%
-%
+% ADDED LONG STRING
 %%%%%%%%%%
 
+	add_long_string([], Acc) -> Acc;
 
-
+	add_long_string([Head | Tail], Acc) ->
+		add_long_string(Tail, string:concat(Acc, Head)).
 
 	propToXml(List, FileName) ->
 
 		{ok, S} = file:open(FileName, write),
-	%%lists:foreach(fun(X) -> io:format(S, "~p~n" ,[X]) end, [hello]),
-	file:close(S).
+
+		file:write_file(FileName, add_long_string(goFromText(List, []),""), [binary] ),
+
+		file:close(S).
 
 
-	goFromText([], _, Acc)-> Acc;
+	goFromText([],  Acc)-> 
+		lists:reverse(Acc);
 
-	goFromText([Head, Tail], S, Acc) ->
-		[{Tag, Value}] = Head.
+	goFromText([Head | Tail], Acc) -> 
+
+	TagValue = string:split(Head, "/", all),
+
+	case  erlang:length(Head) of
+		1 -> 
+			case erlang:length(string:split(Head, "/", all)) < 3 of
+				true -> 
+					case erlang:length(string:split(Head, " ", all)) of
+						1 -> 	
+							[Inf] = Head,
+							goFromText(Tail, [add_long_string(["<", Inf, ">", "\n"],"") | Acc]);
+						_ -> [ HeadAtribute | TailAtribute] = string:split(Head, " ", all), %%%%%%%% <<<-----
+						
+						goFromText(Tail, [add_long_string([	
+							"<", HeadAtribute, " " , long_atribut(TailAtribute,  ""), " > ", "\n"], "") | Acc])
+					end;
+				
+				false -> goFromText(Tail, Acc)
+			end;
+		2 -> [Value, Tag] = TagValue,
+
+		case erlang:length(string:split(Head, "/", all)) of
+				1 -> goFromText(Tail, Acc);
+				2 -> NeedValue = lists:nthtail(erlang:length(Tag), Value),
+				goFromText(Tail, [add_long_string(
+					["<", Tag, "> ", NeedValue, " </", Tag, "> ", "\n"],"") | Acc])
+				
+				end;
+		_ -> goFromText(Tail, Acc)
+	end.
+
+	long_atribut([], Acc) -> Acc;
+
+	long_atribut([Head | Tail],  Acc) -> 
+
+		OutValue = string:split(Head, "\"", all),
+
+		io:format("~p~n", [OutValue]),
+
+		[NiceTag, NiceValue, _] = OutValue,
+		long_atribut(Tail, add_long_string([NiceTag, "\"", NiceValue, "\"", " ", Acc], "")).
 
