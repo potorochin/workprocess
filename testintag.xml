@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8" ?> 
+<!DOCTYPE motorcycles SYSTEM "motorcycles.dtd">  
+  <bike> 
+      <manufacturer>Suzuki</manufacturer> 
+      <brandName valueBrand= "Suzukies"/>
+      <additionalName valueAdd= "Intruder"/>
+    <engine>V-engine, 2-cylinders, 1500 cc</engine> 
+    <kind>custom</kind> 
+    <drive>cardan</drive> 
+    <accessories>Sissy bar, luggage carrier,V&amp;H exhaust pipes</accessories> 
+  </bike> 

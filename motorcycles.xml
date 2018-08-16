@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="utf-8" ?> 
 <!DOCTYPE motorcycles SYSTEM "motorcycles.dtd"> 
 <motorcycles>  
-  <bike year="2000" color="black"> 
+  <bike> 
     <name> 
       <manufacturer>Suzuki</manufacturer> 
       <brandName>Suzuki VL 1500</brandName> 
-sads
       <additionalName>Intruder</additionalName> 
     </name> 
     <engine>V-engine, 2-cylinders, 1500 cc</engine> 
@@ -14,7 +13,7 @@ sads
     <accessories>Sissy bar, luggage carrier,V&amp;H exhaust pipes</accessories> 
   </bike> 
   <date>2004.08.25</date> 
-  <bike year="1983" color="read pearl"> 
+  <bike> 
     <name>  
       <manufacturer>Yamaha</manufacturer> 
       <brandName>XJ 400</brandName> 
